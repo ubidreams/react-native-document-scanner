@@ -7,7 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		B3E7B58A1CC2AC0600A0062D /* RNDocumentScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = B3E7B5891CC2AC0600A0062D /* RNDocumentScanner.m */; };
+		EE576D5922F32673003F122F /* RNDocumentScanner.m in Sources */ = {isa = PBXBuildFile; fileRef = EE576D5822F32673003F122F /* RNDocumentScanner.m */; };
+		EE70810E22F9730400F49139 /* UIImageView+ContentFrame.m in Sources */ = {isa = PBXBuildFile; fileRef = EE70810422F9730400F49139 /* UIImageView+ContentFrame.m */; };
+		EE70810F22F9730400F49139 /* UIImage+OpenCV.mm in Sources */ = {isa = PBXBuildFile; fileRef = EE70810922F9730400F49139 /* UIImage+OpenCV.mm */; };
+		EE70811022F9730400F49139 /* UIImage+OpenCVBW.mm in Sources */ = {isa = PBXBuildFile; fileRef = EE70810B22F9730400F49139 /* UIImage+OpenCVBW.mm */; };
+		EE70811122F9730400F49139 /* UIImage+Rotate.m in Sources */ = {isa = PBXBuildFile; fileRef = EE70810C22F9730400F49139 /* UIImage+Rotate.m */; };
+		EE70811222F9730400F49139 /* UIImage+fixOrientation.m in Sources */ = {isa = PBXBuildFile; fileRef = EE70810D22F9730400F49139 /* UIImage+fixOrientation.m */; };
+		EE70811522F973B700F49139 /* UIImageView+OpenCV.mm in Sources */ = {isa = PBXBuildFile; fileRef = EE70811422F973B700F49139 /* UIImageView+OpenCV.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -25,7 +31,19 @@
 /* Begin PBXFileReference section */
 		134814201AA4EA6300B7C361 /* libRNDocumentScanner.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libRNDocumentScanner.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		B3E7B5881CC2AC0600A0062D /* RNDocumentScanner.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RNDocumentScanner.h; sourceTree = "<group>"; };
-		B3E7B5891CC2AC0600A0062D /* RNDocumentScanner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNDocumentScanner.m; sourceTree = "<group>"; };
+		EE576D5822F32673003F122F /* RNDocumentScanner.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RNDocumentScanner.m; sourceTree = "<group>"; };
+		EE70810422F9730400F49139 /* UIImageView+ContentFrame.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImageView+ContentFrame.m"; sourceTree = "<group>"; };
+		EE70810522F9730400F49139 /* UIImage+Rotate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+Rotate.h"; sourceTree = "<group>"; };
+		EE70810622F9730400F49139 /* UIImage+fixOrientation.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+fixOrientation.h"; sourceTree = "<group>"; };
+		EE70810722F9730400F49139 /* UIImage+OpenCV.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+OpenCV.h"; sourceTree = "<group>"; };
+		EE70810822F9730400F49139 /* UIImage+OpenCVBW.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImage+OpenCVBW.h"; sourceTree = "<group>"; };
+		EE70810922F9730400F49139 /* UIImage+OpenCV.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImage+OpenCV.mm"; sourceTree = "<group>"; };
+		EE70810A22F9730400F49139 /* UIImageView+ContentFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImageView+ContentFrame.h"; sourceTree = "<group>"; };
+		EE70810B22F9730400F49139 /* UIImage+OpenCVBW.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImage+OpenCVBW.mm"; sourceTree = "<group>"; };
+		EE70810C22F9730400F49139 /* UIImage+Rotate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage+Rotate.m"; sourceTree = "<group>"; };
+		EE70810D22F9730400F49139 /* UIImage+fixOrientation.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = "UIImage+fixOrientation.m"; sourceTree = "<group>"; };
+		EE70811322F973B600F49139 /* UIImageView+OpenCV.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "UIImageView+OpenCV.h"; sourceTree = "<group>"; };
+		EE70811422F973B700F49139 /* UIImageView+OpenCV.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = "UIImageView+OpenCV.mm"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -50,10 +68,30 @@
 		58B511D21A9E6C8500147676 = {
 			isa = PBXGroup;
 			children = (
+				EE70810322F9730400F49139 /* OpenCV */,
 				B3E7B5881CC2AC0600A0062D /* RNDocumentScanner.h */,
-				B3E7B5891CC2AC0600A0062D /* RNDocumentScanner.m */,
+				EE576D5822F32673003F122F /* RNDocumentScanner.m */,
 				134814211AA4EA7D00B7C361 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		EE70810322F9730400F49139 /* OpenCV */ = {
+			isa = PBXGroup;
+			children = (
+				EE70810522F9730400F49139 /* UIImage+Rotate.h */,
+				EE70810C22F9730400F49139 /* UIImage+Rotate.m */,
+				EE70810622F9730400F49139 /* UIImage+fixOrientation.h */,
+				EE70810D22F9730400F49139 /* UIImage+fixOrientation.m */,
+				EE70810722F9730400F49139 /* UIImage+OpenCV.h */,
+				EE70810922F9730400F49139 /* UIImage+OpenCV.mm */,
+				EE70810822F9730400F49139 /* UIImage+OpenCVBW.h */,
+				EE70810B22F9730400F49139 /* UIImage+OpenCVBW.mm */,
+				EE70810A22F9730400F49139 /* UIImageView+ContentFrame.h */,
+				EE70810422F9730400F49139 /* UIImageView+ContentFrame.m */,
+				EE70811322F973B600F49139 /* UIImageView+OpenCV.h */,
+				EE70811422F973B700F49139 /* UIImageView+OpenCV.mm */,
+			);
+			path = OpenCV;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -112,7 +150,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B3E7B58A1CC2AC0600A0062D /* RNDocumentScanner.m in Sources */,
+				EE70811222F9730400F49139 /* UIImage+fixOrientation.m in Sources */,
+				EE70811022F9730400F49139 /* UIImage+OpenCVBW.mm in Sources */,
+				EE70810F22F9730400F49139 /* UIImage+OpenCV.mm in Sources */,
+				EE70811122F9730400F49139 /* UIImage+Rotate.m in Sources */,
+				EE70810E22F9730400F49139 /* UIImageView+ContentFrame.m in Sources */,
+				EE70811522F973B700F49139 /* UIImageView+OpenCV.mm in Sources */,
+				EE576D5922F32673003F122F /* RNDocumentScanner.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -203,8 +247,9 @@
 		58B511F01A9E6C8500147676 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../../../ios/**";
 				HEADER_SEARCH_PATHS = (
-				"$(inherited)",
+					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,
 					"$(SRCROOT)/../../../React/**",
 					"$(SRCROOT)/../../react-native/React/**",
@@ -219,6 +264,7 @@
 		58B511F11A9E6C8500147676 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = "$(SRCROOT)/../../../ios/**";
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
 					/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include,

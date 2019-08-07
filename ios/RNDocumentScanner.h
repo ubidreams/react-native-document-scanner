@@ -1,9 +1,6 @@
-
-#if __has_include("RCTBridgeModule.h")
-#import "RCTBridgeModule.h"
-#else
+#import "OpenCV/UIImageView+OpenCV.h"
+#import "OpenCV/UIImage+fixOrientation.h"
 #import <React/RCTBridgeModule.h>
-#endif
 
 @interface RNDocumentScanner : NSObject <RCTBridgeModule>
 

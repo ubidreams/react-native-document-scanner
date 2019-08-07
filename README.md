@@ -11,7 +11,6 @@
 
 ### Manual installation
 
-
 #### iOS
 
 1. In XCode, in the project navigator, right click `Libraries` ➜ `Add Files to [your project's name]`
@@ -41,6 +40,10 @@
   	```
       compile project(':react-native-document-scanner')
   	```
+
+## Dependencies
+- [React Native Camera](https://react-native-community.github.io/react-native-camera/docs/installation)
+- [React Native SVG](https://github.com/react-native-community/react-native-svg#installation)
 
 ## Usage
 ```javascript

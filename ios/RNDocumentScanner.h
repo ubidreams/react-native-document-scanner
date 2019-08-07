@@ -4,5 +4,8 @@
 
 @interface RNDocumentScanner : NSObject <RCTBridgeModule>
 
+@property(nonatomic, strong) UIImageView *imageView;
+@property(nonatomic, strong) UIImage *image;
+
 @end
   

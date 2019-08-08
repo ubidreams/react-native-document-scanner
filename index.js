@@ -1,7 +1,7 @@
 // External libs
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { NativeModules, Dimensions, StyleSheet, View, TouchableOpacity, Image, PanResponder } from 'react-native'
+import { NativeModules, StyleSheet, View, TouchableOpacity, Image, PanResponder } from 'react-native'
 import { RNCamera } from 'react-native-camera'
 import Svg, { Polygon } from 'react-native-svg'
 
@@ -10,21 +10,96 @@ const { RNDocumentScanner } = NativeModules
 
 class DocumentScanner extends Component {
   static propTypes = {
+    onCapture: PropTypes.func,
     RNCameraProps: PropTypes.object
   }
 
   static defaultProps = {
+    onCapture: () => {},
     RNCameraProps: {}
   }
 
   constructor (props) {
     super(props)
 
-    this.state = {
+    this.layoutRNRatioX = 1
+    this.layoutRNRatioY = 1
+    this.layoutRNOriginX = 0
+    this.layoutRNOriginY = 0
+
+    this.initialState = {
       photo: null,
       points: [],
       zoomOnPoint: null
     }
+
+    this.state = {
+      ...this.initialState,
+      layout: {}
+    }
+  }
+
+  /**
+   * Allow to restart and scan document again
+   */
+  restart = () => {
+    this.setState(this.initialState)
+  }
+
+  /**
+   * Start image cropping according to current points and return path of cached file
+   * @return Promise
+   */
+  cropImage = () => {
+    return RNDocumentScanner.crop(this._getPointsForNativeLayout())
+  }
+
+  /**
+   * Usefull when React Native layout has changed and points position needs to be updated
+   */
+  _getPointsForRNLayout = () => {
+    const { points } = this.state
+
+    return points.map((point) => {
+      return {
+        x: point.x * this.layoutRNRatioX + this.layoutRNOriginX,
+        y: point.y * this.layoutRNRatioY + this.layoutRNOriginY
+      }
+    })
+  }
+
+  /**
+   * Usefull when cropping image using native method and React Native layout has changed
+   */
+  _getPointsForNativeLayout = () => {
+    const { points } = this.state
+
+    return points.map((point) => {
+      return {
+        x: point.x / this.layoutRNRatioX - this.layoutRNOriginX,
+        y: point.y / this.layoutRNRatioY - this.layoutRNOriginY
+      }
+    })
+  }
+
+  /**
+   * When layout changed
+   * @param layout
+   */
+  _handleLayout = async ({ nativeEvent: { layout } }) => {
+    const { layout: oldLayout } = this.state
+
+    // update ratio and origin for React Native new layout
+    this.layoutRNRatioX = layout.width / oldLayout.width || 1
+    this.layoutRNRatioY = layout.height / oldLayout.height || 1
+    this.layoutRNOriginX = layout.x
+    this.layoutRNOriginY = layout.y
+
+    // update state
+    this.setState({
+      layout,
+      points: this._getPointsForRNLayout()
+    })
   }
 
   /**
@@ -100,30 +175,39 @@ class DocumentScanner extends Component {
    * @param camera
    */
   _handlePressCapture = async (camera) => {
+    const { layout } = this.state
+
     // capture photo
     const options = { base64: false }
     const { uri } = await camera.takePictureAsync(options)
 
     // attempt to identify document from opencv
-    const { width, height } = Dimensions.get('window')
-    const config = { screenWidth: width, screenHeight: height }
-    const points = await RNDocumentScanner.detectEdges(uri.replace('file://', ''), config)
+    const points = await RNDocumentScanner.detectEdges(uri.replace('file://', ''), layout)
 
     // update state
-    this.setState({ photo: uri, points })
+    this.setState({ photo: uri, points }, () => {
+      // callback from props
+      this.props.onCapture()
+    })
   }
 
   render () {
+    const { RNCameraProps } = this.props
     const { photo, points, zoomOnPoint } = this.state
+    const { width: containerWidth, height: containerHeight } = this.state.layout
 
     return (
-      <View style={styles.container}>
+      <View
+        style={styles.container}
+        onLayout={this._handleLayout}
+      >
         {/* Camera */}
         {photo === null &&
           <RNCamera
             style={styles.camera}
             type={RNCamera.Constants.Type.back}
             captureAudio={false}
+            {...RNCameraProps}
           >
             {({ camera }) => {
               // Capture button
@@ -142,7 +226,11 @@ class DocumentScanner extends Component {
         {photo !== null &&
           <Image
             source={{ uri: photo }}
-            style={styles.photo}
+            resizeMode='stretch'
+            style={{
+              width: containerWidth,
+              height: containerHeight
+            }}
           />
         }
 
@@ -168,8 +256,8 @@ class DocumentScanner extends Component {
         {/* Image cropper (polygon) */}
         {points.length > 0 &&
           <Svg
-            width={Dimensions.get('window').width}
-            height={Dimensions.get('window').height}
+            width={containerWidth}
+            height={containerHeight}
             style={styles.imageCropperPolygonContainer}
           >
             <Polygon
@@ -187,11 +275,14 @@ class DocumentScanner extends Component {
             {/* Image */}
             <Image
               source={{ uri: photo }}
+              resizeMode='stretch'
               style={[
-                styles.zoomImage,
+                {
+                  width: containerWidth,
+                  height: containerHeight
+                },
                 this._getImageZoomStyleForCurrentHoldingPoint()
               ]}
-              resizeMode='cover'
             />
 
             {/* Cursor */}
@@ -234,9 +325,6 @@ const styles = StyleSheet.create({
     borderWidth: 5,
     borderColor: '#c2c2c2'
   },
-  photo: {
-    flex: 1
-  },
   imageCropperPointContainer: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -270,10 +358,6 @@ const styles = StyleSheet.create({
     borderWidth: ZOOM_CONTAINER_BORDER_WIDTH,
     overflow: 'hidden',
     backgroundColor: 'black'
-  },
-  zoomImage: {
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height
   },
   zoomCursor: {
     position: 'absolute',

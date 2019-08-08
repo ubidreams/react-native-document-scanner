@@ -33,16 +33,16 @@
     std::vector<std::vector<cv::Point>>squares;
     std::vector<cv::Point> largest_square;
     
-    CGFloat A4Width = targetSize.width * 0.8;
-    CGFloat A4Height = A4Width * 1.41;
-    CGFloat A4OriginX = (targetSize.width - A4Width) / 2;
-    CGFloat A4OriginY = (targetSize.height - A4Height) / 2;
+    CGFloat defaultWidth = targetSize.width * 0.5;
+    CGFloat defaultHeight = defaultWidth;
+    CGFloat defaultX = (targetSize.width - defaultWidth) / 2;
+    CGFloat defaultY = (targetSize.height - defaultHeight) / 2;
     
     CropRect rect;
-    rect.topLeft = CGPointMake(A4OriginX, A4OriginY);
-    rect.topRight = CGPointMake(A4OriginX + A4Width, A4OriginY);
-    rect.bottomLeft = CGPointMake(A4OriginX, A4OriginY + A4Height);
-    rect.bottomRight = CGPointMake(A4OriginX + A4Width, A4OriginY + A4Height);
+    rect.topLeft = CGPointMake(defaultX, defaultY);
+    rect.topRight = CGPointMake(defaultX + defaultWidth, defaultY);
+    rect.bottomLeft = CGPointMake(defaultX, defaultY + defaultHeight);
+    rect.bottomRight = CGPointMake(defaultX + defaultWidth, defaultY + defaultHeight);
     
     find_squares(original, squares);
     find_largest_square(squares, largest_square);

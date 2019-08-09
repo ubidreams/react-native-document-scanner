@@ -32,6 +32,12 @@ export default class App extends Component {
           <RNDocumentScanner
             ref={(ref) => (this.scanner = ref)}
             onCapture={() => this.setState({ isCropping: true })}
+            androidCameraPermissionOptions={{
+              title: 'Permission to use camera',
+              message: 'We need your permission to use your camera',
+              buttonPositive: 'Ok',
+              buttonNegative: 'Cancel'
+            }}
           />
 
           {/* Button to scan document */}

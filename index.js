@@ -1,7 +1,7 @@
 // External libs
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { NativeModules, StyleSheet, View, TouchableOpacity, Image, PanResponder } from 'react-native'
+import { NativeModules, StyleSheet, View, TouchableOpacity, Image, PanResponder, PermissionsAndroid } from 'react-native'
 import { RNCamera } from 'react-native-camera'
 import Svg, { Polygon } from 'react-native-svg'
 
@@ -178,7 +178,10 @@ class DocumentScanner extends Component {
     const { layout } = this.state
 
     // capture photo
-    const options = { base64: false }
+    const options = {
+      base64: false,
+      fixOrientation: true
+    }
     const { uri } = await camera.takePictureAsync(options)
 
     // attempt to identify document from opencv
@@ -234,6 +237,22 @@ class DocumentScanner extends Component {
           />
         }
 
+        {/* Image cropper (polygon) */}
+        {points.length > 0 &&
+          <Svg
+            width={containerWidth}
+            height={containerHeight}
+            style={styles.imageCropperPolygonContainer}
+          >
+            <Polygon
+              points={this._getPolygonPoints()}
+              fill='transparent'
+              stroke={CROPPER_COLOR}
+              strokeWidth='1'
+            />
+          </Svg>
+        }
+
         {/* Image cropper (points) */}
         {points.map((point, index) => (
           <View
@@ -252,22 +271,6 @@ class DocumentScanner extends Component {
             />
           </View>
         ))}
-
-        {/* Image cropper (polygon) */}
-        {points.length > 0 &&
-          <Svg
-            width={containerWidth}
-            height={containerHeight}
-            style={styles.imageCropperPolygonContainer}
-          >
-            <Polygon
-              points={this._getPolygonPoints()}
-              fill='transparent'
-              stroke={CROPPER_COLOR}
-              strokeWidth='1'
-            />
-          </Svg>
-        }
 
         {/* Zoom on point holding */}
         {zoomOnPoint !== null &&

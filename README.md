@@ -60,5 +60,5 @@ render () {
 
 ## Credits
 - for iOS : [SmartCrop](https://github.com/kronik/smartcrop)
-- for Android : [SimpleDocumentScanner-Android](https://github.com/jbttn/SimpleDocumentScanner-Android)
+- for Android : [SimpleDocumentScanner-Android](https://github.com/jbttn/SimpleDocumentScanner-Android) and [OpenCV rewrite by Java](https://github.com/kongzaohui/OpenCV)
 - for image cropper component : [react-native-perspective-image-cropper](https://github.com/Michaelvilleneuve/react-native-perspective-image-cropper)

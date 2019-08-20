@@ -1,7 +1,7 @@
 // External libs
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { NativeModules, StyleSheet, View, TouchableOpacity, Image, PanResponder, PermissionsAndroid } from 'react-native'
+import { NativeModules, StyleSheet, View, TouchableOpacity, Image, PanResponder, Platform, PermissionsAndroid } from 'react-native'
 import { RNCamera } from 'react-native-camera'
 import Svg, { Polygon } from 'react-native-svg'
 
@@ -84,21 +84,33 @@ class DocumentScanner extends Component {
 
   /**
    * When layout changed
+   * TODO: find a way to do the same thing on both platform
    * @param layout
    */
   _handleLayout = async ({ nativeEvent: { layout } }) => {
     const { layout: oldLayout } = this.state
+    let points = this.state.points
 
     // update ratio and origin for React Native new layout
-    this.layoutRNRatioX = layout.width / oldLayout.width || 1
-    this.layoutRNRatioY = layout.height / oldLayout.height || 1
-    this.layoutRNOriginX = layout.x
-    this.layoutRNOriginY = layout.y
+    // iOS only due to stretch resize mode
+    if (Platform.OS === 'ios') {
+      this.layoutRNRatioX = layout.width / oldLayout.width || 1
+      this.layoutRNRatioY = layout.height / oldLayout.height || 1
+      this.layoutRNOriginX = layout.x
+      this.layoutRNOriginY = layout.y
+
+      points = this._getPointsForRNLayout()
+    } else {
+      // for Android, we need to detect edges again according to the new image ratio
+      if (this.state.photo !== null) {
+        points = await RNDocumentScanner.detectEdges(this.state.photo.replace('file://', ''), layout)
+      }
+    }
 
     // update state
     this.setState({
       layout,
-      points: this._getPointsForRNLayout()
+      points
     })
   }
 
@@ -229,11 +241,12 @@ class DocumentScanner extends Component {
         {photo !== null &&
           <Image
             source={{ uri: photo }}
-            resizeMode='stretch'
+            resizeMode={Platform.OS === 'ios' ? 'stretch' : 'cover'}
             style={{
               width: containerWidth,
               height: containerHeight
             }}
+            fadeDuration={0}
           />
         }
 
@@ -278,7 +291,7 @@ class DocumentScanner extends Component {
             {/* Image */}
             <Image
               source={{ uri: photo }}
-              resizeMode='stretch'
+              resizeMode={Platform.OS === 'ios' ? 'stretch' : 'cover'}
               style={[
                 {
                   width: containerWidth,
@@ -286,6 +299,7 @@ class DocumentScanner extends Component {
                 },
                 this._getImageZoomStyleForCurrentHoldingPoint()
               ]}
+              fadeDuration={0}
             />
 
             {/* Cursor */}

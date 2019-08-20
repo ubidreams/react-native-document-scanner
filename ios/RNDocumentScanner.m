@@ -19,7 +19,7 @@ RCT_REMAP_METHOD(detectEdges,
     UIImage *image = [UIImage imageWithContentsOfFile:imagePath];
     image = [image fixOrientation];
     
-    // get config
+    // get layout
     CGFloat containerX = [[layout valueForKey:@"x"] doubleValue];
     CGFloat containerY = [[layout valueForKey:@"y"] doubleValue];
     CGFloat containerWidth = [[layout valueForKey:@"width"] doubleValue];

@@ -1,6 +1,16 @@
 
 # react-native-document-scanner
 
+## Preview
+
+### iOS
+
+![iOS Preview](./preview-ios.gif)
+
+### Android
+
+![Android Preview](./preview-android.gif)
+
 ## Getting started
 
 `$ yarn add https://github.com/ubidreams/react-native-document-scanner`

@@ -8,6 +8,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
@@ -27,23 +28,23 @@ import java.util.List;
 
 import androidx.core.content.FileProvider;
 
+import static org.opencv.android.Utils.bitmapToMat;
+import static org.opencv.android.Utils.matToBitmap;
+
 public class BitmapOpenCV {
 
     private boolean debug = false; // if you want to debug don't forget to enable "Storage" in app permissions
-    private Bitmap bitmap = null;
-    private int width;
-    private int height;
+    private Bitmap originalBitmap = null;
+    private Size frameSize;
+    private Size imageSize;
+    private double frameScale;
 
     public BitmapOpenCV(Context context, String imagePath, int width, int height) {
-        // constructor
-        this.width = width;
-        this.height = height;
-
         // convert string path to Uri
         Uri uri = FileProvider.getUriForFile(
-                context,
-                context.getApplicationContext().getPackageName() + ".provider",
-                new File(imagePath)
+            context,
+            context.getApplicationContext().getPackageName() + ".provider",
+            new File(imagePath)
         );
 
         // get image from uri
@@ -55,18 +56,26 @@ public class BitmapOpenCV {
             e.printStackTrace();
         }
 
-        // resize bitmap according to layout
+        // transform original image with desired frame ratio
         if (bitmap != null) {
-            this.bitmap = ThumbnailUtils.extractThumbnail(bitmap, width, height);
-            if (this.debug) this.saveBitmapAsPicture(this.bitmap, "image-original.png");
+            double desiredRatio = (double) width / height;
+            int desiredWidth = (int) Math.round(bitmap.getHeight() * desiredRatio);
+            int desiredHeight = bitmap.getHeight();
+
+            this.originalBitmap = ThumbnailUtils.extractThumbnail(bitmap, desiredWidth, desiredHeight);
+            if (this.debug) this.saveBitmapAsPicture(this.originalBitmap, "image-original.png");
+
+            this.frameSize = new Size(width, height);
+            this.imageSize = new Size(this.originalBitmap.getWidth(), this.originalBitmap.getHeight());
+            this.frameScale = Math.min(this.frameSize.width / this.imageSize.width, this.frameSize.height / this.imageSize.height);
         }
     }
 
     public List<PointF> detectEdges() {
-        float defaultWidth = (float) (this.width * 0.5);
+        float defaultWidth = (float) (this.frameSize.width * 0.5);
         float defaultHeight = defaultWidth;
-        float defaultX = (this.width - defaultWidth) / 2;
-        float defaultY = (this.height - defaultHeight) / 2;
+        float defaultX = (float) (this.frameSize.width - defaultWidth) / 2;
+        float defaultY = (float) (this.frameSize.height - defaultHeight) / 2;
 
         List<PointF> defaultResult = new ArrayList<>();
         defaultResult.add(new PointF(defaultX, defaultY));
@@ -74,11 +83,16 @@ public class BitmapOpenCV {
         defaultResult.add(new PointF(defaultX + defaultWidth, defaultY + defaultHeight));
         defaultResult.add(new PointF(defaultX, defaultY + defaultHeight));
 
-        if (this.bitmap != null) {
-            Mat original = new Mat();
-            org.opencv.android.Utils.bitmapToMat(this.bitmap, original);
+        if (this.originalBitmap != null) {
+            Mat image = new Mat();
+            bitmapToMat(this.originalBitmap, image);
 
-            List<MatOfPoint> squares = this.findSquares(original);
+            double contentWidth = this.imageSize.width * this.frameScale;
+            double contentHeight = this.imageSize.height * this.frameScale;
+            Imgproc.resize(image, image, new Size(contentWidth, contentHeight));
+            if (this.debug) this.saveMatAsPicture(image, "image-resized.png");
+
+            List<MatOfPoint> squares = this.findSquares(image);
             MatOfPoint largestSquare = this.findLargestSquares(squares);
 
             if (largestSquare.total() == 4) {
@@ -90,7 +104,7 @@ public class BitmapOpenCV {
                 result.add(new PointF(Double.valueOf(points[2].x).floatValue(), Double.valueOf(points[2].y).floatValue()));
                 result.add(new PointF(Double.valueOf(points[3].x).floatValue(), Double.valueOf(points[3].y).floatValue()));
 
-                original.release();
+                image.release();
                 largestSquare.release();
 
                 return result;
@@ -216,8 +230,8 @@ public class BitmapOpenCV {
     }
 
     private void saveMatAsPicture(Mat mat, String fileName) {
-        Bitmap bitmap = Bitmap.createBitmap(this.width, this.height, Bitmap.Config.ARGB_8888);
-        org.opencv.android.Utils.matToBitmap(mat, bitmap);
+        Bitmap bitmap = Bitmap.createBitmap(mat.cols(), mat.rows(), Bitmap.Config.ARGB_8888);
+        matToBitmap(mat, bitmap);
 
         this.saveBitmapAsPicture(bitmap, fileName);
     }
@@ -239,6 +253,43 @@ public class BitmapOpenCV {
                 e.printStackTrace();
             }
         }
+    }
+
+    public Bitmap fourPointTransform(Point[] pts) {
+        Point tl = new Point(pts[0].x / this.frameScale, pts[0].y / this.frameScale);
+        Point tr = new Point(pts[1].x / this.frameScale, pts[1].y / this.frameScale);
+        Point br = new Point(pts[2].x / this.frameScale, pts[2].y / this.frameScale);
+        Point bl = new Point(pts[3].x / this.frameScale, pts[3].y / this.frameScale);
+
+        double w1 = Math.sqrt(Math.pow(br.x - bl.x, 2) + Math.pow(br.x - bl.x, 2));
+        double w2 = Math.sqrt(Math.pow(tr.x - tl.x, 2) + Math.pow(tr.x - tl.x, 2));
+
+        double h1 = Math.sqrt(Math.pow(tr.y - br.y, 2) + Math.pow(tr.y - br.y, 2));
+        double h2 = Math.sqrt(Math.pow(tl.y - bl.y, 2) + Math.pow(tl.y - bl.y, 2));
+
+        double maxWidth = (w1 < w2) ? w1 : w2;
+        double maxHeight = (h1 < h2) ? h1 : h2;
+
+        Mat src = new Mat(4, 1, CvType.CV_32FC2);
+        Mat dst = new Mat(4, 1, CvType.CV_32FC2);
+        src.put(0, 0, tl.x, tl.y, tr.x, tr.y, br.x, br.y, bl.x, bl.y);
+        dst.put(0, 0, 0, 0, maxWidth - 1, 0, maxWidth - 1, maxHeight - 1, 0, maxHeight - 1);
+
+        Mat undistorted = new Mat(new Size(maxWidth, maxHeight), CvType.CV_8UC4);
+        Mat original = new Mat();
+        bitmapToMat(this.originalBitmap, original);
+
+        Imgproc.warpPerspective(original, undistorted, Imgproc.getPerspectiveTransform(src, dst), new Size(maxWidth, maxHeight));
+
+        Bitmap bitmap = Bitmap.createBitmap(undistorted.cols(), undistorted.rows(), Bitmap.Config.ARGB_8888);
+        matToBitmap(undistorted, bitmap);
+
+        src.release();
+        dst.release();
+        undistorted.release();
+        original.release();
+
+        return bitmap;
     }
 
 }

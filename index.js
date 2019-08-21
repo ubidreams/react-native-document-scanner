@@ -1,7 +1,7 @@
 // External libs
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { NativeModules, StyleSheet, View, TouchableOpacity, Image, PanResponder, Platform, PermissionsAndroid } from 'react-native'
+import { NativeModules, StyleSheet, View, TouchableOpacity, Image, PanResponder, Platform } from 'react-native'
 import { RNCamera } from 'react-native-camera'
 import Svg, { Polygon } from 'react-native-svg'
 
@@ -21,11 +21,6 @@ class DocumentScanner extends Component {
 
   constructor (props) {
     super(props)
-
-    this.layoutRNRatioX = 1
-    this.layoutRNRatioY = 1
-    this.layoutRNOriginX = 0
-    this.layoutRNOriginY = 0
 
     this.initialState = {
       photo: null,
@@ -51,66 +46,18 @@ class DocumentScanner extends Component {
    * @return Promise
    */
   cropImage = () => {
-    return RNDocumentScanner.crop(this._getPointsForNativeLayout())
-  }
-
-  /**
-   * Usefull when React Native layout has changed and points position needs to be updated
-   */
-  _getPointsForRNLayout = () => {
-    const { points } = this.state
-
-    return points.map((point) => {
-      return {
-        x: point.x * this.layoutRNRatioX + this.layoutRNOriginX,
-        y: point.y * this.layoutRNRatioY + this.layoutRNOriginY
-      }
-    })
-  }
-
-  /**
-   * Usefull when cropping image using native method and React Native layout has changed
-   */
-  _getPointsForNativeLayout = () => {
-    const { points } = this.state
-
-    return points.map((point) => {
-      return {
-        x: point.x / this.layoutRNRatioX - this.layoutRNOriginX,
-        y: point.y / this.layoutRNRatioY - this.layoutRNOriginY
-      }
-    })
+    return RNDocumentScanner.crop(this.state.points)
   }
 
   /**
    * When layout changed
-   * TODO: find a way to do the same thing on both platform
    * @param layout
    */
   _handleLayout = async ({ nativeEvent: { layout } }) => {
-    const { layout: oldLayout } = this.state
-    let points = this.state.points
-
-    // update ratio and origin for React Native new layout
-    // iOS only due to stretch resize mode
-    if (Platform.OS === 'ios') {
-      this.layoutRNRatioX = layout.width / oldLayout.width || 1
-      this.layoutRNRatioY = layout.height / oldLayout.height || 1
-      this.layoutRNOriginX = layout.x
-      this.layoutRNOriginY = layout.y
-
-      points = this._getPointsForRNLayout()
-    } else {
-      // for Android, we need to detect edges again according to the new image ratio
-      if (this.state.photo !== null) {
-        points = await RNDocumentScanner.detectEdges(this.state.photo.replace('file://', ''), layout)
-      }
-    }
-
+    // TODO: update points positions when layout has changed
     // update state
     this.setState({
-      layout,
-      points
+      layout
     })
   }
 
@@ -286,8 +233,13 @@ class DocumentScanner extends Component {
         ))}
 
         {/* Zoom on point holding */}
-        {zoomOnPoint !== null &&
-          <View style={styles.zoomContainer}>
+        {photo !== null &&
+          <View
+            style={[
+              styles.zoomContainer,
+              { opacity: zoomOnPoint !== null ? 1 : 0 }
+            ]}
+          >
             {/* Image */}
             <Image
               source={{ uri: photo }}
@@ -297,7 +249,9 @@ class DocumentScanner extends Component {
                   width: containerWidth,
                   height: containerHeight
                 },
-                this._getImageZoomStyleForCurrentHoldingPoint()
+                zoomOnPoint !== null
+                  ? this._getImageZoomStyleForCurrentHoldingPoint()
+                  : {}
               ]}
               fadeDuration={0}
             />

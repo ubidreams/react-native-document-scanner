@@ -41,14 +41,12 @@ export default class App extends Component {
           />
 
           {/* Button to scan document */}
-          {isCropping &&
-            <Button
-              disabled={!isCropping}
-              onPress={this._handlePressCrop}
-              title='Validate'
-              color='#0082CA'
-            />
-          }
+          <Button
+            disabled={!isCropping}
+            onPress={this._handlePressCrop}
+            title='Validate'
+            color='#0082CA'
+          />
         </View>
       )
     } else {

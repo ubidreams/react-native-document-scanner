@@ -70,12 +70,16 @@ public class RNDocumentScannerModule extends ReactContextBaseJavaModule {
     }
 
     @ReactMethod
-    public void crop(ReadableArray points, Promise promise) {
+    public void crop(ReadableArray points, ReadableMap options, Promise promise) {
         // get points
         ReadableMap topLeftPoint = points.getMap(0);
         ReadableMap topRightPoint = points.getMap(1);
         ReadableMap bottomRightPoint = points.getMap(2);
         ReadableMap bottomLeftPoint = points.getMap(3);
+
+        // get options
+        int width = options.getInt("width");
+        int height = options.getInt("height");
 
         // go opencv !
         Point point1 = new Point(topLeftPoint.getDouble("x"), topLeftPoint.getDouble("y"));
@@ -85,6 +89,23 @@ public class RNDocumentScannerModule extends ReactContextBaseJavaModule {
         Point[] pts = {point1, point2, point3, point4};
 
         Bitmap croppedBitmap = this.bitmap.fourPointTransform(pts);
+
+        // resize cropped image ?
+        if (width > 0 && height > 0) {
+            float ratioX = (float) width / croppedBitmap.getWidth();
+            float ratioY = (float) height / croppedBitmap.getHeight();
+            float ratio = Math.min(ratioX, ratioY);
+
+            int finalWidth = (int) (croppedBitmap.getWidth() * ratio);
+            int finalHeight = (int) (croppedBitmap.getHeight() * ratio);
+
+            try {
+                croppedBitmap = Bitmap.createScaledBitmap(croppedBitmap, finalWidth, finalHeight, true);
+            } catch (OutOfMemoryError e) {
+                Log.d(tag, "Error converting to A4");
+                e.printStackTrace();
+            }
+        }
 
         // save image to cache directory
         FileOutputStream fos = null;

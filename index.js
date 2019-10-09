@@ -45,14 +45,22 @@ class DocumentScanner extends Component {
    * Start image cropping according to current points and return path of cached file
    * @param options = {
    *    width: Number
-   *    height: Number
+   *    height: Number,
+   *    thumbnail: Boolean
    * }
    * @return Promise
    */
-  cropImage = (options = { width: -1, height: -1 }) => {
+  cropImage = (options = {}) => {
+    const finalOptions = {
+      width: -1,
+      height: -1,
+      thumbnail: false,
+      ...options
+    }
+
     return RNDocumentScanner.crop(
       this.state.points,
-      options
+      finalOptions
     )
   }
 

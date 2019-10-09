@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.PointF;
 import android.util.Log;
 
+import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Promise;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
@@ -71,6 +72,8 @@ public class RNDocumentScannerModule extends ReactContextBaseJavaModule {
 
     @ReactMethod
     public void crop(ReadableArray points, ReadableMap options, Promise promise) {
+        WritableMap result = Arguments.createMap();
+
         // get points
         ReadableMap topLeftPoint = points.getMap(0);
         ReadableMap topRightPoint = points.getMap(1);
@@ -80,6 +83,7 @@ public class RNDocumentScannerModule extends ReactContextBaseJavaModule {
         // get options
         int width = options.getInt("width");
         int height = options.getInt("height");
+        boolean thumbnail = options.getBoolean("thumbnail");
 
         // go opencv !
         Point point1 = new Point(topLeftPoint.getDouble("x"), topLeftPoint.getDouble("y"));
@@ -92,29 +96,59 @@ public class RNDocumentScannerModule extends ReactContextBaseJavaModule {
 
         // resize cropped image ?
         if (width > 0 && height > 0) {
-            float ratioX = (float) width / croppedBitmap.getWidth();
-            float ratioY = (float) height / croppedBitmap.getHeight();
-            float ratio = Math.min(ratioX, ratioY);
-
-            int finalWidth = (int) (croppedBitmap.getWidth() * ratio);
-            int finalHeight = (int) (croppedBitmap.getHeight() * ratio);
-
-            try {
-                croppedBitmap = Bitmap.createScaledBitmap(croppedBitmap, finalWidth, finalHeight, true);
-            } catch (OutOfMemoryError e) {
-                Log.d(tag, "Error converting to A4");
-                e.printStackTrace();
-            }
+            croppedBitmap = this.resizeBitmap(croppedBitmap, width, height);
         }
 
         // save image to cache directory
-        FileOutputStream fos = null;
-        String fileName = UUID.randomUUID().toString() + ".png";
-        String croppedImageFilePath = this.reactContext.getCacheDir().getAbsolutePath() + "/" + fileName;
+        String croppedImageFilePath = this.saveBitmapToCacheDirectory(croppedBitmap);
+
+        // add image file path to result
+        result.putString("image", "file://" + croppedImageFilePath);
+
+        // create thumbnail ?
+        if (thumbnail) {
+            // resize original image to create a thumbnail
+            Bitmap thumbnailBitmap = this.resizeBitmap(croppedBitmap, 250, 250);
+
+            // save thumbnail to cache directory
+            String thumbnailFilePath = this.saveBitmapToCacheDirectory(thumbnailBitmap);
+
+            // add thumbnail file path to result
+            result.putString("thumbnail", "file://" + thumbnailFilePath);
+        }
+
+        // resolve promise with result
+        promise.resolve(result);
+    }
+
+    private Bitmap resizeBitmap (Bitmap bitmap, int width, int height) {
+        Bitmap resizedBitmap = null;
+
+        float ratioX = (float) width / bitmap.getWidth();
+        float ratioY = (float) height / bitmap.getHeight();
+        float ratio = Math.min(ratioX, ratioY);
+
+        int finalWidth = (int) (bitmap.getWidth() * ratio);
+        int finalHeight = (int) (bitmap.getHeight() * ratio);
 
         try {
-            fos = new FileOutputStream(croppedImageFilePath);
-            croppedBitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
+            resizedBitmap = Bitmap.createScaledBitmap(bitmap, finalWidth, finalHeight, true);
+        } catch (OutOfMemoryError e) {
+            Log.d(tag, "Error resizing bitmap");
+            e.printStackTrace();
+        }
+
+        return resizedBitmap;
+    }
+
+    private String saveBitmapToCacheDirectory (Bitmap bitmap) {
+        FileOutputStream fos = null;
+        String fileName = UUID.randomUUID().toString() + ".png";
+        String imageFilePath = this.reactContext.getCacheDir().getAbsolutePath() + "/" + fileName;
+
+        try {
+            fos = new FileOutputStream(imageFilePath);
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, fos);
         } catch (Exception e) {
             Log.d(tag, "Error writing file in cache");
             e.printStackTrace();
@@ -127,8 +161,7 @@ public class RNDocumentScannerModule extends ReactContextBaseJavaModule {
             }
         }
 
-        // resolve promise
-        promise.resolve("file://" + croppedImageFilePath);
+        return imageFilePath;
     }
 
 }

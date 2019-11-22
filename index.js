@@ -43,10 +43,25 @@ class DocumentScanner extends Component {
 
   /**
    * Start image cropping according to current points and return path of cached file
+   * @param options = {
+   *    width: Number
+   *    height: Number,
+   *    thumbnail: Boolean
+   * }
    * @return Promise
    */
-  cropImage = () => {
-    return RNDocumentScanner.crop(this.state.points)
+  cropImage = (options = {}) => {
+    const finalOptions = {
+      width: -1,
+      height: -1,
+      thumbnail: false,
+      ...options
+    }
+
+    return RNDocumentScanner.crop(
+      this.state.points,
+      finalOptions
+    )
   }
 
   /**
@@ -303,7 +318,9 @@ const styles = StyleSheet.create({
     width: IMAGE_CROPPER_POINT_CONTAINER_SIZE,
     height: IMAGE_CROPPER_POINT_CONTAINER_SIZE,
     marginTop: -IMAGE_CROPPER_POINT_CONTAINER_SIZE / 2,
-    marginLeft: -IMAGE_CROPPER_POINT_CONTAINER_SIZE / 2
+    marginLeft: -IMAGE_CROPPER_POINT_CONTAINER_SIZE / 2,
+    zIndex: 2,
+    elevation: 2
   },
   imageCropperPoint: {
     width: IMAGE_CROPPER_POINT_SIZE,
@@ -316,7 +333,9 @@ const styles = StyleSheet.create({
   imageCropperPolygonContainer: {
     position: 'absolute',
     top: 0,
-    left: 0
+    left: 0,
+    zIndex: 1,
+    elevation: 1
   },
   zoomContainer: {
     position: 'absolute',

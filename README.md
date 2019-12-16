@@ -30,7 +30,7 @@
   	```
     ...
       # Pods for [your project]
-      pod 'OpenCV', '~> 3.4.2'
+      pod 'libopencv-contrib', '~> 3.4.1'
     end
   	```
 5. Run `pod install` in your ios folder

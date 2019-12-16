@@ -250,7 +250,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"${BUILT_PRODUCTS_DIR}/**",
-					"$(SRCROOT)/../../../ios/Pods/OpenCV",
+					"$(PROJECT_DIR)/../../../ios/Pods/libopencv-contrib",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",
@@ -271,7 +271,7 @@
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"${BUILT_PRODUCTS_DIR}/**",
-					"$(SRCROOT)/../../../ios/Pods/OpenCV",
+					"$(PROJECT_DIR)/../../../ios/Pods/libopencv-contrib",
 				);
 				HEADER_SEARCH_PATHS = (
 					"$(inherited)",

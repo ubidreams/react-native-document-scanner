@@ -10,12 +10,14 @@ const { RNDocumentScanner } = NativeModules
 
 class DocumentScanner extends Component {
   static propTypes = {
-    onCapture: PropTypes.func,
+    onStartCapture: PropTypes.func,
+    onEndCapture: PropTypes.func,
     RNCameraProps: PropTypes.object
   }
 
   static defaultProps = {
-    onCapture: () => {},
+    onStartCapture: () => {},
+    onEndCapture: () => {},
     RNCameraProps: {}
   }
 
@@ -151,6 +153,9 @@ class DocumentScanner extends Component {
   _handlePressCapture = async (camera) => {
     const { layout } = this.state
 
+    // callback from props
+    this.props.onStartCapture()
+
     // capture photo
     const options = {
       base64: false,
@@ -164,7 +169,7 @@ class DocumentScanner extends Component {
     // update state
     this.setState({ photo: uri, points }, () => {
       // callback from props
-      this.props.onCapture()
+      this.props.onEndCapture()
     })
   }
 

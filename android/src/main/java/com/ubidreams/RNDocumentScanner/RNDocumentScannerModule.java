@@ -95,7 +95,7 @@ public class RNDocumentScannerModule extends ReactContextBaseJavaModule {
         Bitmap croppedBitmap = this.bitmap.fourPointTransform(pts);
 
         // resize cropped image ?
-        if (width > 0 && height > 0) {
+        if (width > 0 || height > 0) {
             croppedBitmap = this.resizeBitmap(croppedBitmap, width, height);
         }
 
@@ -122,23 +122,36 @@ public class RNDocumentScannerModule extends ReactContextBaseJavaModule {
     }
 
     private Bitmap resizeBitmap (Bitmap bitmap, int width, int height) {
-        Bitmap resizedBitmap = null;
+      Bitmap resizedBitmap = null;
+      float ratio;
 
-        float ratioX = (float) width / bitmap.getWidth();
-        float ratioY = (float) height / bitmap.getHeight();
-        float ratio = Math.min(ratioX, ratioY);
+      if (width < 0) width = 0;
+      if (height < 0) height = 0;
 
-        int finalWidth = (int) (bitmap.getWidth() * ratio);
-        int finalHeight = (int) (bitmap.getHeight() * ratio);
+      float ratioX = (float) width / bitmap.getWidth();
+      float ratioY = (float) height / bitmap.getHeight();
 
-        try {
-            resizedBitmap = Bitmap.createScaledBitmap(bitmap, finalWidth, finalHeight, true);
-        } catch (OutOfMemoryError e) {
-            Log.d(tag, "Error resizing bitmap");
-            e.printStackTrace();
+      if (ratioX == 0 || ratioY == 0) {
+        if (ratioX > 0) {
+          ratio = ratioX;
+        } else {
+          ratio = ratioY;
         }
+      } else {
+        ratio = Math.min(ratioX, ratioY);
+      }
 
-        return resizedBitmap;
+      int finalWidth = (int) (bitmap.getWidth() * ratio);
+      int finalHeight = (int) (bitmap.getHeight() * ratio);
+
+      try {
+          resizedBitmap = Bitmap.createScaledBitmap(bitmap, finalWidth, finalHeight, true);
+      } catch (OutOfMemoryError e) {
+          Log.d(tag, "Error resizing bitmap");
+          e.printStackTrace();
+      }
+
+      return resizedBitmap;
     }
 
     private String saveBitmapToCacheDirectory (Bitmap bitmap) {

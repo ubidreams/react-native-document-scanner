@@ -159,7 +159,8 @@ class DocumentScanner extends Component {
     // capture photo
     const options = {
       base64: false,
-      fixOrientation: true
+      fixOrientation: true,
+      pauseAfterCapture: true
     }
     const { uri } = await camera.takePictureAsync(options)
 

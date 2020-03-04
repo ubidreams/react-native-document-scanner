@@ -40,5 +40,5 @@ repositories {
 
 dependencies {
     implementation 'com.facebook.react:react-native:+'
-    implementation 'com.quickbirdstudios:opencv:3.4.1'
+    implementation 'com.github.ubidreams:LiveEdgeDetection:master-SNAPSHOT'
 }

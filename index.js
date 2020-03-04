@@ -1,46 +1,72 @@
 // External libs
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { NativeModules, StyleSheet, View, TouchableOpacity, Image, PanResponder, Platform } from 'react-native'
-import { RNCamera } from 'react-native-camera'
+import { requireNativeComponent, PermissionsAndroid, StyleSheet, View, Text, PanResponder, Dimensions, PixelRatio } from 'react-native'
 import Svg, { Polygon } from 'react-native-svg'
 
-// Native modules
-const { RNDocumentScanner } = NativeModules
+// Native component
+const RNDocumentScanner = requireNativeComponent('RNDocumentScanner')
 
 class DocumentScanner extends Component {
   static propTypes = {
-    onStartCapture: PropTypes.func,
-    onEndCapture: PropTypes.func,
-    RNCameraProps: PropTypes.object
+    scanHintOptions: PropTypes.object,
+    androidCameraPermissionOptions: PropTypes.object,
+    scannerRef: PropTypes.func
   }
 
   static defaultProps = {
-    onStartCapture: () => {},
-    onEndCapture: () => {},
-    RNCameraProps: {}
+    scanHintOptions: {
+      findRect: null,
+      moveCloser: {
+        color: '#ff9c00',
+        message: 'Move closer'
+      },
+      moveAway: {
+        color: '#ff9c00',
+        message: 'Move away'
+      },
+      adjustAngle: {
+        color: '#ff9c00',
+        message: 'Adjust angle'
+      },
+      capturingImage: {
+        color: '#26d84c',
+        message: 'Still hold'
+      }
+    },
+    androidCameraPermissionOptions: {
+      title: '',
+      message: ''
+    }
   }
 
   constructor (props) {
     super(props)
 
-    this.initialState = {
-      photo: null,
-      points: [],
-      zoomOnPoint: null
-    }
-
     this.state = {
-      ...this.initialState,
-      layout: {}
+      ready: false,
+      scanHint: null,
+      points: []
     }
+  }
+
+  componentDidMount = async () => {
+    const { androidCameraPermissionOptions } = this.props
+
+    const granted = await PermissionsAndroid.request(
+      PermissionsAndroid.PERMISSIONS.CAMERA,
+      androidCameraPermissionOptions
+    )
+
+    this.setState({
+      ready: granted === PermissionsAndroid.RESULTS.GRANTED
+    })
   }
 
   /**
    * Allow to restart and scan document again
    */
   restart = () => {
-    this.setState(this.initialState)
   }
 
   /**
@@ -53,42 +79,6 @@ class DocumentScanner extends Component {
    * @return Promise
    */
   cropImage = (options = {}) => {
-    const finalOptions = {
-      width: -1,
-      height: -1,
-      thumbnail: false,
-      ...options
-    }
-
-    return RNDocumentScanner.crop(
-      this.state.points,
-      finalOptions
-    )
-  }
-
-  /**
-   * When layout changed
-   * @param layout
-   */
-  _handleLayout = async ({ nativeEvent: { layout } }) => {
-    // TODO: update points positions when layout has changed
-    // update state
-    this.setState({
-      layout
-    })
-  }
-
-  /**
-   * Get image zoom style according to the current holding point
-   */
-  _getImageZoomStyleForCurrentHoldingPoint = () => {
-    const { zoomOnPoint } = this.state
-    const adjustment = ZOOM_CONTAINER_SIZE / 2
-
-    return {
-      marginLeft: -zoomOnPoint.x + adjustment - ZOOM_CURSOR_BORDER_SIZE,
-      marginTop: -zoomOnPoint.y + adjustment - ZOOM_CURSOR_SIZE / 2
-    }
   }
 
   /**
@@ -146,90 +136,65 @@ class DocumentScanner extends Component {
     })
   }
 
-  /**
-   * When capture button is clicked
-   * @param camera
-   */
-  _handlePressCapture = async (camera) => {
-    const { layout } = this.state
-
-    // callback from props
-    this.props.onStartCapture()
-
-    // capture photo
-    const options = {
-      base64: false,
-      fixOrientation: true,
-      pauseAfterCapture: true
-    }
-    const { uri } = await camera.takePictureAsync(options)
-
-    // attempt to identify document from opencv
-    const points = await RNDocumentScanner.detectEdges(uri.replace('file://', ''), layout)
-
-    // update state
-    this.setState({ photo: uri, points }, () => {
-      // callback from props
-      this.props.onEndCapture()
-    })
-  }
-
   render () {
-    const { RNCameraProps } = this.props
-    const { photo, points, zoomOnPoint } = this.state
-    const { width: containerWidth, height: containerHeight } = this.state.layout
+    const { scannerRef, scanHintOptions } = this.props
+    const { ready, scanHint, points } = this.state
 
     return (
       <View
         style={styles.container}
-        onLayout={this._handleLayout}
       >
-        {/* Camera */}
-        {photo === null &&
-          <RNCamera
-            style={styles.camera}
-            type={RNCamera.Constants.Type.back}
-            captureAudio={false}
-            {...RNCameraProps}
-          >
-            {({ camera }) => {
-              // Capture button
-              return (
-                <TouchableOpacity
-                  activeOpacity={0.6}
-                  onPress={() => this._handlePressCapture(camera)}
-                  style={styles.captureBtn}
-                />
-              )
+        {/* Document scanner */}
+        {ready &&
+          <RNDocumentScanner
+            ref={scannerRef}
+            scanHintOptions={scanHintOptions}
+            style={styles.documentScanner}
+            displayHint={(event) => {
+              if (event.nativeEvent.type !== undefined) {
+                this.setState({
+                  scanHint: DocumentScanner.defaultProps.scanHintOptions[event.nativeEvent.type]
+                })
+              }
             }}
-          </RNCamera>
+            onPictureClicked={(event) => {
+              this.setState({
+                points: event.nativeEvent.points.map((point) => ({
+                  x: point.x / PixelRatio.get(),
+                  y: point.y / PixelRatio.get()
+                })),
+                scanHint: null
+              })
+            }}
+          />
         }
 
-        {/* Photo */}
-        {photo !== null &&
-          <Image
-            source={{ uri: photo }}
-            resizeMode={Platform.OS === 'ios' ? 'stretch' : 'cover'}
-            style={{
-              width: containerWidth,
-              height: containerHeight
-            }}
-            fadeDuration={0}
-          />
+        {/* Scan hint */}
+        {scanHint !== null &&
+          <View style={styles.scanHintContainer}>
+            <View
+              style={[
+                styles.scanHint,
+                { backgroundColor: scanHint.color }
+              ]}
+            >
+              <Text style={styles.scanHintText}>
+                {scanHint.message}
+              </Text>
+            </View>
+          </View>
         }
 
         {/* Image cropper (polygon) */}
         {points.length > 0 &&
           <Svg
-            width={containerWidth}
-            height={containerHeight}
             style={styles.imageCropperPolygonContainer}
           >
             <Polygon
               points={this._getPolygonPoints()}
               fill='transparent'
               stroke={CROPPER_COLOR}
-              strokeWidth='1'
+              strokeWidth='4'
             />
           </Svg>
         }
@@ -252,38 +217,6 @@ class DocumentScanner extends Component {
             />
           </View>
         ))}
-
-        {/* Zoom on point holding */}
-        {photo !== null &&
-          <View
-            style={[
-              styles.zoomContainer,
-              { opacity: zoomOnPoint !== null ? 1 : 0 }
-            ]}
-          >
-            {/* Image */}
-            <Image
-              source={{ uri: photo }}
-              resizeMode={Platform.OS === 'ios' ? 'stretch' : 'cover'}
-              style={[
-                {
-                  width: containerWidth,
-                  height: containerHeight
-                },
-                zoomOnPoint !== null
-                  ? this._getImageZoomStyleForCurrentHoldingPoint()
-                  : {}
-              ]}
-              fadeDuration={0}
-            />
-
-            {/* Cursor */}
-            <View style={styles.zoomCursor}>
-              <View style={styles.zoomCursorHorizontal} />
-              <View style={styles.zoomCursorVertical} />
-            </View>
-          </View>
-        }
       </View>
     )
   }
@@ -294,17 +227,32 @@ const IMAGE_CROPPER_POINT_SIZE = 20
 
 const CROPPER_COLOR = '#0082CA'
 
-const ZOOM_CONTAINER_SIZE = 120
-const ZOOM_CONTAINER_BORDER_WIDTH = 2
-const ZOOM_CURSOR_SIZE = 10
-const ZOOM_CURSOR_BORDER_SIZE = 1
-
 const styles = StyleSheet.create({
   container: {
     flex: 1
   },
-  camera: {
+  documentScanner: {
     flex: 1
+  },
+  scanHintContainer: {
+    position: 'absolute',
+    top: 0,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1,
+    elevation: 1,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  scanHint: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    textAlign: 'center'
+  },
+  scanHintText: {
+    color: 'white',
+    fontSize: 16
   },
   captureBtn: {
     alignSelf: 'center',
@@ -332,46 +280,16 @@ const styles = StyleSheet.create({
     width: IMAGE_CROPPER_POINT_SIZE,
     height: IMAGE_CROPPER_POINT_SIZE,
     borderRadius: IMAGE_CROPPER_POINT_SIZE / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    borderWidth: 1,
-    borderColor: CROPPER_COLOR
+    backgroundColor: CROPPER_COLOR
   },
   imageCropperPolygonContainer: {
     position: 'absolute',
     top: 0,
+    bottom: 0,
     left: 0,
+    right: 0,
     zIndex: 1,
     elevation: 1
-  },
-  zoomContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: ZOOM_CONTAINER_SIZE,
-    height: ZOOM_CONTAINER_SIZE,
-    borderRadius: ZOOM_CONTAINER_SIZE / 2,
-    borderColor: 'white',
-    borderWidth: ZOOM_CONTAINER_BORDER_WIDTH,
-    overflow: 'hidden',
-    backgroundColor: 'black'
-  },
-  zoomCursor: {
-    position: 'absolute',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    height: '100%'
-  },
-  zoomCursorHorizontal: {
-    width: ZOOM_CURSOR_SIZE,
-    height: ZOOM_CURSOR_BORDER_SIZE,
-    backgroundColor: CROPPER_COLOR
-  },
-  zoomCursorVertical: {
-    width: ZOOM_CURSOR_BORDER_SIZE,
-    height: ZOOM_CURSOR_SIZE,
-    marginTop: -ZOOM_CURSOR_SIZE / 2,
-    backgroundColor: CROPPER_COLOR
   }
 })
 

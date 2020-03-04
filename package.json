@@ -1,46 +1,27 @@
 {
   "name": "react-native-document-scanner",
   "version": "1.0.0",
-  "description": "Document scanner with border detection, perspective correction and custom crop/resize",
+  "description": "Document scanner with edge live detection, perspective correction and custom crop/resize",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "react-native"
+    "react-native",
+    "document scanner",
+    "edge detection",
+    "perspective correction",
+    "crop",
+    "resize"
   ],
   "author": "Romain Marquois",
   "license": "MIT",
   "homepage": "https://github.com/ubidreams/react-native-document-scanner",
   "peerDependencies": {
-    "react-native": "0.59.1",
-    "react-native-camera": "3.0.1",
-    "react-native-svg": "9.6.2"
-  },
-  "devDependencies": {
-    "standard": "13.1.0",
-    "@babel/core": "7.4.0",
-    "@babel/runtime": "7.4.2",
-    "babel-core": "7.0.0-bridge.0",
-    "babel-eslint": "10.0.1",
-    "eslint": "5.15.3"
-  },
-  "standard": {
-    "parser": "babel-eslint",
-    "plugins": [
-      "react"
-    ],
-    "globals": [
-      "describe",
-      "test",
-      "jest",
-      "expect",
-      "fetch",
-      "navigator",
-      "__DEV__",
-      "XMLHttpRequest",
-      "FormData",
-      "React$Element"
-    ]
+    "react": ">=16.8.1",
+    "react-native": ">=0.60.0",
+    "react-native-camera": ">=3.0.0",
+    "react-native-orientation-locker": ">=1.1.7",
+    "react-native-svg": ">=9.6.0"
   }
 }

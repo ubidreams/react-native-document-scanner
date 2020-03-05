@@ -200,7 +200,7 @@ public class RNDocumentScannerManager extends SimpleViewManager<ScanSurfaceView>
       Mat originalMat = new Mat(copyBitmap.getHeight(), copyBitmap.getWidth(), CvType.CV_8UC1);
       Utils.bitmapToMat(copyBitmap, originalMat);
 
-      ArrayList<PointF> pointsF;
+      ArrayList<PointF> pointsF = new ArrayList<>();
 
       try {
         Quadrilateral quad = ScanUtils.detectLargestQuadrilateral(originalMat);
@@ -210,17 +210,19 @@ public class RNDocumentScannerManager extends SimpleViewManager<ScanSurfaceView>
           double previewArea = originalMat.rows() * originalMat.cols();
 
           if (resultArea > previewArea * 0.08) {
-            pointsF = new ArrayList<>();
             pointsF.add(new PointF((float) quad.points[0].x, (float) quad.points[0].y));
             pointsF.add(new PointF((float) quad.points[1].x, (float) quad.points[1].y));
             pointsF.add(new PointF((float) quad.points[2].x, (float) quad.points[2].y));
             pointsF.add(new PointF((float) quad.points[3].x, (float) quad.points[3].y));
-          } else {
-            pointsF = ScanUtils.getPolygonDefaultPoints(copyBitmap);
           }
+        }
 
-        } else {
-          pointsF = ScanUtils.getPolygonDefaultPoints(copyBitmap);
+        if (pointsF.size() == 0) {
+          ArrayList<PointF> defaultPointsF = ScanUtils.getPolygonDefaultPoints(copyBitmap);
+          pointsF.add(defaultPointsF.get(0));
+          pointsF.add(defaultPointsF.get(1));
+          pointsF.add(defaultPointsF.get(3));
+          pointsF.add(defaultPointsF.get(2));
         }
 
 

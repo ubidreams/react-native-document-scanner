@@ -1,17 +1,20 @@
 // External libs
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
-import { requireNativeComponent, PermissionsAndroid, StyleSheet, View, Text, PanResponder, Dimensions, PixelRatio } from 'react-native'
+import { requireNativeComponent, NativeModules, PermissionsAndroid, StyleSheet, View, Text, PanResponder, PixelRatio } from 'react-native'
 import Svg, { Polygon } from 'react-native-svg'
 
-// Native component
+// Native modules
+const RNDocumentScannerModule = NativeModules.RNDocumentScannerModule
+
+// Native components
 const RNDocumentScanner = requireNativeComponent('RNDocumentScanner')
 
 class DocumentScanner extends Component {
   static propTypes = {
     scanHintOptions: PropTypes.object,
     androidCameraPermissionOptions: PropTypes.object,
-    scannerRef: PropTypes.func
+    onCapture: PropTypes.func
   }
 
   static defaultProps = {
@@ -37,7 +40,8 @@ class DocumentScanner extends Component {
     androidCameraPermissionOptions: {
       title: '',
       message: ''
-    }
+    },
+    onCapture: () => {}
   }
 
   constructor (props) {
@@ -79,6 +83,20 @@ class DocumentScanner extends Component {
    * @return Promise
    */
   cropImage = (options = {}) => {
+    const finalOptions = {
+      width: -1,
+      height: -1,
+      thumbnail: false,
+      ...options
+    }
+
+    return RNDocumentScannerModule.crop(
+      this.state.points.map((point) => ({
+        x: point.x * PixelRatio.get(),
+        y: point.y * PixelRatio.get()
+      })),
+      finalOptions
+    )
   }
 
   /**
@@ -137,7 +155,7 @@ class DocumentScanner extends Component {
   }
 
   render () {
-    const { scannerRef, scanHintOptions } = this.props
+    const { scanHintOptions, onCapture } = this.props
     const { ready, scanHint, points } = this.state
 
     return (
@@ -147,7 +165,6 @@ class DocumentScanner extends Component {
         {/* Document scanner */}
         {ready &&
           <RNDocumentScanner
-            ref={scannerRef}
             scanHintOptions={scanHintOptions}
             style={styles.documentScanner}
             displayHint={(event) => {
@@ -164,9 +181,27 @@ class DocumentScanner extends Component {
                   y: point.y / PixelRatio.get()
                 })),
                 scanHint: null
+              }, () => {
+                onCapture()
               })
             }}
           />
+        }
+
+        {/* Scan hint */}
+        {scanHint !== null &&
+          <View style={styles.scanHintContainer}>
+            <View
+              style={[
+                styles.scanHint,
+                { backgroundColor: scanHint.color }
+              ]}
+            >
+              <Text style={styles.scanHintText}>
+                {scanHint.message}
+              </Text>
+            </View>
+          </View>
         }
 
         {/* Scan hint */}

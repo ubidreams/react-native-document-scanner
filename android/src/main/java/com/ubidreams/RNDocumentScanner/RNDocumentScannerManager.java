@@ -6,14 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
-import android.os.Build;
-import android.transition.TransitionManager;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.View;
-import android.view.Window;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
 
 import com.adityaarora.liveedgedetection.enums.ScanHint;
 import com.adityaarora.liveedgedetection.interfaces.IScanner;
@@ -37,14 +30,12 @@ import org.opencv.core.Mat;
 import org.opencv.imgproc.Imgproc;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 
 import androidx.annotation.Nullable;
 
 public class RNDocumentScannerManager extends SimpleViewManager<ScanSurfaceView> implements IScanner {
 
-  public static final String REACT_CLASS = "RNDocumentScanner";
   private ThemedReactContext reactContext;
   private ScanSurfaceView view;
   private ReadableMap scanHintOptions;
@@ -70,9 +61,13 @@ public class RNDocumentScannerManager extends SimpleViewManager<ScanSurfaceView>
     }
   }
 
+  public Bitmap getCopyBitmap () {
+    return copyBitmap;
+  }
+
   @Override
   public String getName() {
-    return REACT_CLASS;
+    return "RNDocumentScanner";
   }
 
   @Override
@@ -199,8 +194,6 @@ public class RNDocumentScannerManager extends SimpleViewManager<ScanSurfaceView>
 
       int width = view.getWidth();
       int height = view.getHeight();
-
-      Log.d("rom2", "width: " + view.getWidth() + ", height: " + view.getHeight());
 
       copyBitmap = ScanUtils.resizeToScreenContentSize(copyBitmap, width, height);
 

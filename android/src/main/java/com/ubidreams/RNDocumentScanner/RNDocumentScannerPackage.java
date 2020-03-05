@@ -11,20 +11,24 @@ import com.facebook.react.uimanager.ViewManager;
 import com.facebook.react.bridge.JavaScriptModule;
 
 public class RNDocumentScannerPackage implements ReactPackage {
+    private final RNDocumentScannerManager manager = new RNDocumentScannerManager();
+
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
-      return Collections.emptyList();
+        return Arrays.<NativeModule>asList(
+            new RNDocumentScannerModule(reactContext, manager)
+        );
     }
 
     // Deprecated from RN 0.47
     public List<Class<? extends JavaScriptModule>> createJSModules() {
-      return Collections.emptyList();
+        return Collections.emptyList();
     }
 
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-      return Arrays.<ViewManager>asList(
-        new RNDocumentScannerManager()
-      );
+        return Arrays.<ViewManager>asList(
+            manager
+        );
     }
 }

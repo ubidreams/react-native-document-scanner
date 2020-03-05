@@ -47,10 +47,14 @@ class DocumentScanner extends Component {
   constructor (props) {
     super(props)
 
-    this.state = {
+    this.initialState = {
       ready: false,
       scanHint: null,
       points: []
+    }
+
+    this.state = {
+      ...this.initialState
     }
   }
 
@@ -71,6 +75,9 @@ class DocumentScanner extends Component {
    * Allow to restart and scan document again
    */
   restart = () => {
+    this.setState(this.initialState, () => {
+      setTimeout(() => this.setState({ ready: true }), 25)
+    })
   }
 
   /**

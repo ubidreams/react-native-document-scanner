@@ -60,6 +60,7 @@ export default class App extends Component {
               {/* Button to restart scan */}
               <TouchableOpacity
                 style={styles.previewButton}
+                onPress={() => this.scanner.restart()}
               >
                 <FontAwesome
                   name='undo'

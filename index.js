@@ -177,7 +177,7 @@ class DocumentScanner extends Component {
             displayHint={(event) => {
               if (event.nativeEvent.type !== undefined) {
                 this.setState({
-                  scanHint: DocumentScanner.defaultProps.scanHintOptions[event.nativeEvent.type]
+                  scanHint: scanHintOptions[event.nativeEvent.type]
                 })
               }
             }}

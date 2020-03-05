@@ -1,15 +1,22 @@
 
 # react-native-document-scanner
 
+**It works best with a dark background.**
+
 ## Preview
 
 ### iOS
 
-![iOS Preview](./preview-ios.gif)
+Not yet ready. Work in progress.
 
 ### Android
 
-![Android Preview](./preview-android.gif)
+![Android Preview "Adjust angle"](./preview/android/adjust-angle.jpg)
+![Android Preview "Move away"](./preview/android/move-away.jpg)
+![Android Preview "Move closer"](./preview/android/move-closer.jpg)
+![Android Preview "Still hold"](./preview/android/still-hold.jpg)
+![Android Preview "Image cropping"](./preview/android/image-cropping.jpg)
+![Android Preview "Image result"](./preview/android/image-result.jpg)
 
 ## Getting started
 

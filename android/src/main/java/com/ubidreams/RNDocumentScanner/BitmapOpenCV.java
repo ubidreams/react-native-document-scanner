@@ -7,13 +7,17 @@ import android.media.ThumbnailUtils;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.util.Log;
 
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfInt;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
@@ -39,6 +43,15 @@ public class BitmapOpenCV {
     private Size imageSize;
     private double frameScale;
 
+    public static int KSIZE_BLUR = 3;
+    public static int KSIZE_CLOSE = 10;
+    public static final int CANNY_THRESH_L = 85;
+    public static final int CANNY_THRESH_U = 185;
+    public static final int TRUNC_THRESH = 150;
+    public static final int CUTOFF_THRESH = 155;
+
+    private static Mat morph_kernel = new Mat(new Size(KSIZE_CLOSE, KSIZE_CLOSE), CvType.CV_8UC1, new Scalar(255));
+
     public BitmapOpenCV(Context context, String imagePath, int width, int height) {
         // convert string path to Uri
         Uri uri = FileProvider.getUriForFile(
@@ -49,7 +62,7 @@ public class BitmapOpenCV {
 
         // get image from uri
         Bitmap bitmap = null;
-        
+
         try {
             bitmap = MediaStore.Images.Media.getBitmap(context.getContentResolver(), uri);
         } catch (IOException e) {
@@ -93,10 +106,9 @@ public class BitmapOpenCV {
             if (this.debug) this.saveMatAsPicture(image, "image-resized.png");
 
             List<MatOfPoint> squares = this.findSquares(image);
-            MatOfPoint largestSquare = this.findLargestSquares(squares);
+            Point[] points = this.findLargestSquares(squares);
 
-            if (largestSquare.total() == 4) {
-                Point[] points = sortPoints(largestSquare.toArray());
+            if (points != null) {
                 List<PointF> result = new ArrayList<>();
 
                 result.add(new PointF(Double.valueOf(points[0].x).floatValue(), Double.valueOf(points[0].y).floatValue()));
@@ -105,7 +117,6 @@ public class BitmapOpenCV {
                 result.add(new PointF(Double.valueOf(points[3].x).floatValue(), Double.valueOf(points[3].y).floatValue()));
 
                 image.release();
-                largestSquare.release();
 
                 return result;
             } else {
@@ -116,92 +127,104 @@ public class BitmapOpenCV {
         }
     }
 
-    private List<MatOfPoint> findSquares(Mat image) {
-        List<MatOfPoint> squares = new ArrayList<>();
+    private List<MatOfPoint> findSquares(Mat originalMat) {
+        Imgproc.cvtColor(originalMat, originalMat, Imgproc.COLOR_BGR2GRAY, 4);
 
-        // Convert image to grayscale
-        Mat src_gray = new Mat();
-        Imgproc.cvtColor(image, src_gray, Imgproc.COLOR_BGR2GRAY);
+        /*
+         *  1. We shall first blur and normalize the image for uniformity,
+         *  2. Truncate light-gray to white and normalize,
+         *  3. Apply canny edge detection,
+         *  4. Cutoff weak edges,
+         *  5. Apply closing(morphology), then proceed to finding contours.
+         */
+        // step 1.
+        Imgproc.blur(originalMat, originalMat, new Size(KSIZE_BLUR, KSIZE_BLUR));
+        Core.normalize(originalMat, originalMat, 0, 255, Core.NORM_MINMAX);
+        if (this.debug) this.saveMatAsPicture(originalMat, "image-step1.png");
 
-        // Blur helps to decrease the amount of detected edges
-        Mat filtered = new Mat();
-        Imgproc.GaussianBlur(src_gray, filtered, new Size(11, 11), 0);
+        // step 2.
+        // As most papers are bright in color, we can use truncation to make it uniformly bright.
+        Imgproc.threshold(originalMat,originalMat, TRUNC_THRESH,255,Imgproc.THRESH_TRUNC);
+        Core.normalize(originalMat, originalMat, 0, 255, Core.NORM_MINMAX);
+        if (this.debug) this.saveMatAsPicture(originalMat, "image-step2.png");
 
-        // Detect edges
-        Mat edges = new Mat();
-        Imgproc.Canny(filtered, edges, 10, 20, 3, false);
+        // step 3.
+        // After above preprocessing, canny edge detection can now work much better.
+        Imgproc.Canny(originalMat, originalMat, CANNY_THRESH_U, CANNY_THRESH_L);
+        if (this.debug) this.saveMatAsPicture(originalMat, "image-step3.png");
 
-        // Dilate helps to connect nearby line segments
-        Mat dilated_edges = new Mat();
-        Imgproc.dilate(edges, dilated_edges, new Mat(), new Point(-1, -1), 2);
-        if (this.debug) this.saveMatAsPicture(dilated_edges, "image-edges.png");
+        // step 4.
+        // Cutoff the remaining weak edges
+        Imgproc.threshold(originalMat,originalMat,CUTOFF_THRESH,255,Imgproc.THRESH_TOZERO);
+        if (this.debug) this.saveMatAsPicture(originalMat, "image-step4.png");
 
-        // Find contours and store them in a list
-        List<MatOfPoint> contours = new ArrayList<>();
-        Imgproc.findContours(dilated_edges, contours, new Mat(), Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE, new Point());
+        // step 5.
+        // Closing - closes small gaps. Completes the edges on canny image; AND also reduces stringy lines near edge of paper.
+        Imgproc.morphologyEx(originalMat, originalMat, Imgproc.MORPH_CLOSE, morph_kernel, new Point(-1,-1),1);
+        if (this.debug) this.saveMatAsPicture(originalMat, "image-step5.png");
 
-        // Test contours and assemble squares out of them
-        MatOfPoint2f approxcurve = new MatOfPoint2f();
+        // Get only the 10 largest contours (each approximated to their convex hulls)
+        return findLargestContours(originalMat);
+    }
 
-        for (int i = 0; i < contours.size(); i++){
-            double epsilon = Imgproc.arcLength(new MatOfPoint2f(contours.get(i).toArray()), true) * 0.02;
+    private static MatOfPoint hull2Points(MatOfInt hull, MatOfPoint contour) {
+        List<Integer> indexes = hull.toList();
+        List<Point> points = new ArrayList<>();
+        List<Point> ctrList = contour.toList();
+        for(Integer index:indexes) {
+          points.add(ctrList.get(index));
+        }
+        MatOfPoint point= new MatOfPoint();
+        point.fromList(points);
+        return point;
+    }
 
-            Imgproc.approxPolyDP(new MatOfPoint2f(contours.get(i).toArray()), approxcurve, epsilon, true);
+    private static List<MatOfPoint> findLargestContours(Mat inputMat) {
+        Mat mHierarchy = new Mat();
+        List<MatOfPoint> mContourList = new ArrayList<>();
+        //finding contours - as we are sorting by area anyway, we can use RETR_LIST - faster than RETR_EXTERNAL.
+        Imgproc.findContours(inputMat, mContourList, mHierarchy, Imgproc.RETR_LIST, Imgproc.CHAIN_APPROX_SIMPLE);
 
-            double contourArea = Math.abs(Imgproc.contourArea(approxcurve.clone()));
-            boolean isContourConvex = Imgproc.isContourConvex(new MatOfPoint(approxcurve.toArray()));
+        // Convert the contours to their Convex Hulls i.e. removes minor nuances in the contour
+        List<MatOfPoint> mHullList = new ArrayList<>();
+        MatOfInt tempHullIndices = new MatOfInt();
+        for (int i = 0; i < mContourList.size(); i++) {
+          Imgproc.convexHull(mContourList.get(i), tempHullIndices);
+          mHullList.add(hull2Points(tempHullIndices, mContourList.get(i)));
+        }
+        // Release mContourList as its job is done
+        for (MatOfPoint c : mContourList)
+          c.release();
+        tempHullIndices.release();
+        mHierarchy.release();
 
-            // Note: absolute value of an area is used because area may be positive or negative - in accordance with the contour orientation
-            if (approxcurve.toArray().length == 4 && contourArea > 1000 && isContourConvex) {
-                double maxCosine = 0;
+        if (mHullList.size() != 0) {
+          Collections.sort(mHullList, new Comparator<MatOfPoint>() {
+            @Override
+            public int compare(MatOfPoint lhs, MatOfPoint rhs) {
+              return Double.compare(Imgproc.contourArea(rhs),Imgproc.contourArea(lhs));
+            }
+          });
+          return mHullList.subList(0, Math.min(mHullList.size(), 10));
+        }
+        return null;
+    }
 
-                for (int j = 2; j < 5; j++){
-                    double cosine = Math.abs(this.angle(approxcurve.toArray()[j%4], approxcurve.toArray()[j-2], approxcurve.toArray()[j-1]));
-                    maxCosine = Math.max(maxCosine, cosine);
-                }
+    private Point[] findLargestSquares(List<MatOfPoint> squares){
+        for (MatOfPoint c : squares) {
+            MatOfPoint2f c2f = new MatOfPoint2f(c.toArray());
+            double peri = Imgproc.arcLength(c2f, true);
+            MatOfPoint2f approx = new MatOfPoint2f();
+            Imgproc.approxPolyDP(c2f, approx, 0.02 * peri, true);
+            Point[] points = approx.toArray();
 
-                if (maxCosine < 0.3) {
-                    squares.add(new MatOfPoint(approxcurve.toArray()));
-                }
+            // select biggest 4 angles polygon
+            if (approx.rows() == 4) {
+                return sortPoints(points);
             }
         }
 
-        return squares;
-    }
-
-    private MatOfPoint findLargestSquares(List<MatOfPoint> squares){
-        // no squares detected
-        if (squares.size() == 0) {
-            return new MatOfPoint();
-        }
-
-        // Find largest square
-        int max_width = 0;
-        int max_height = 0;
-        int max_square_idx = 0;
-
-        for (int i = 0; i < squares.size(); i++) {
-            // Convert a set of 4 unordered Points into a meaningful cv::Rect structure.
-            Rect rectangle = Imgproc.boundingRect(squares.get(i));
-
-            // Store the index position of the biggest square found
-            if ((rectangle.width >= max_width) && (rectangle.height >= max_height)) {
-                max_width = rectangle.width;
-                max_height = rectangle.height;
-                max_square_idx = i;
-            }
-        }
-
-        return squares.get(max_square_idx);
-    }
-
-    private double angle(Point pt1, Point pt2, Point pt0) {
-        double dx1 = pt1.x - pt0.x;
-        double dy1 = pt1.y - pt0.y;
-        double dx2 = pt2.x - pt0.x;
-        double dy2 = pt2.y - pt0.y;
-
-        return (dx1*dx2 + dy1*dy2)/Math.sqrt((dx1*dx1 + dy1*dy1)*(dx2*dx2 + dy2*dy2) + 1e-10);
+        return null;
     }
 
     private Point[] sortPoints(Point[] src) {

@@ -79,4 +79,4 @@ render () {
 
 ## TODO
 
-- [ ] Update points positions when layout has changed
+- [ ] Support for landscape orientation

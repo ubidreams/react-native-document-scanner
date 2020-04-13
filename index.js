@@ -175,27 +175,27 @@ class DocumentScanner extends Component {
         this.setState({ zoomOnPoint: points[pointIndex] });
       },
       onPanResponderMove: (evt, gestureState) => {
-        if (
-          this._isPointCanMove(
-            pointIndex,
-            gestureState.moveX,
-            gestureState.moveY
-          )
-        ) {
-          this.setState({
-            points: points.map((point, index) => {
-              if (index === pointIndex) {
+        this.setState({
+          points: points.map((point, index) => {
+            if (index === pointIndex) {
+              if (
+                this._isPointCanMove(
+                  pointIndex,
+                  point.x + gestureState.dx,
+                  point.y + gestureState.dy
+                )
+              ) {
                 return {
                   x: point.x + gestureState.dx,
                   y: point.y + gestureState.dy,
                 };
-              } else {
-                return point;
               }
-            }),
-            zoomOnPoint: points[pointIndex],
-          });
-        }
+            }
+
+            return point;
+          }),
+          zoomOnPoint: points[pointIndex],
+        });
       },
       onPanResponderRelease: () => {
         this.setState({ zoomOnPoint: null });

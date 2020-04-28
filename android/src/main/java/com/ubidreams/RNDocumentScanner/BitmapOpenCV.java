@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 
 import androidx.core.content.FileProvider;
@@ -220,11 +221,51 @@ public class BitmapOpenCV {
 
             // select biggest 4 angles polygon
             if (approx.rows() == 4) {
-                return sortPoints(points);
+                Point[] foundPoints = sortPoints(points);
+
+                if (isPossibleRectangle(foundPoints)) {
+                    return foundPoints;
+                }
             }
         }
 
         return null;
+    }
+
+    private boolean isPossibleRectangle(Point[] approxPoints) {
+        // angles must be ~90° (+/-5°)
+        double maxcos = getMaxCosine(0, approxPoints);
+
+        if (!(Math.abs(maxcos) <= 0.087)) {
+            return false;
+        }
+
+        // check unique points
+        HashSet<Point> uniquePoints = new HashSet<>();
+
+        for (Point p: approxPoints) {
+            if (!uniquePoints.add(p)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private double getMaxCosine(double maxCosine, Point[] approxPoints) {
+        for (int i = 2; i < 5; i++) {
+            double cosine = Math.abs(angle(approxPoints[i % 4], approxPoints[i - 2], approxPoints[i - 1]));
+            maxCosine = Math.max(cosine, maxCosine);
+        }
+        return maxCosine;
+    }
+
+    private double angle(Point p1, Point p2, Point p0) {
+        double dx1 = p1.x - p0.x;
+        double dy1 = p1.y - p0.y;
+        double dx2 = p2.x - p0.x;
+        double dy2 = p2.y - p0.y;
+        return (dx1 * dx2 + dy1 * dy2) / Math.sqrt((dx1 * dx1 + dy1 * dy1) * (dx2 * dx2 + dy2 * dy2) + 1e-10);
     }
 
     private Point[] sortPoints(Point[] src) {

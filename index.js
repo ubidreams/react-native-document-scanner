@@ -118,44 +118,56 @@ class DocumentScanner extends Component {
    * Check if point can move to the given position
    */
   _isPointCanMove = (pointIndex, moveX, moveY) => {
-    const { layout } = this.state;
+    const { layout, points } = this.state;
 
-    // points are defined clockwis
+    // current point must be at a minimum distance of point container size
+    const sideMinSize = IMAGE_CROPPER_POINT_CONTAINER_SIZE;
+
     switch (pointIndex) {
       case 0:
         return (
-          moveX > 0 &&
-          moveX < layout.width / 2 &&
-          moveY > 0 &&
-          moveY < layout.height / 2
+          points[1].x - moveX >= sideMinSize &&
+          points[3].y - moveY >= sideMinSize &&
+          points[2].x - moveX >= sideMinSize &&
+          points[2].y - moveY >= sideMinSize
         );
 
       case 1:
         return (
-          moveX > layout.width / 2 &&
-          moveX < layout.width &&
-          moveY > 0 &&
-          moveY < layout.height / 2
+          moveX - points[0].x >= sideMinSize &&
+          points[2].y - moveY >= sideMinSize &&
+          moveX - points[3].x >= sideMinSize &&
+          points[3].y - moveY >= sideMinSize
         );
 
       case 2:
         return (
-          moveX > layout.width / 2 &&
-          moveX < layout.width &&
-          moveY > layout.height / 2 &&
-          moveY < layout.height
+          moveX - points[3].x >= sideMinSize &&
+          moveY - points[1].y >= sideMinSize &&
+          moveX - points[0].x >= sideMinSize &&
+          moveY - points[0].y >= sideMinSize
         );
 
       case 3:
         return (
-          moveX > 0 &&
-          moveX < layout.width / 2 &&
-          moveY > layout.height / 2 &&
-          moveY < layout.height
+          points[2].x - moveX >= sideMinSize &&
+          moveY - points[0].y >= sideMinSize &&
+          points[1].x - moveX >= sideMinSize &&
+          moveY - points[1].y >= sideMinSize
         );
     }
 
-    return false;
+    // points must be in current layout
+    if (
+      moveX <= 0 ||
+      moveY <= 0 ||
+      moveX >= layout.width ||
+      moveY >= layout.height
+    ) {
+      return false;
+    }
+
+    return true;
   };
 
   /**

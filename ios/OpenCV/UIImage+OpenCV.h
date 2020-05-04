@@ -12,6 +12,7 @@
 //  appreciated but not required.
 //
 
+#undef NO
 #import <opencv2/opencv.hpp>
 #import <UIKit/UIKit.h>
 

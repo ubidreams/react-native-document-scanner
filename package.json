@@ -1,6 +1,6 @@
 {
   "name": "react-native-document-scanner",
-  "version": "1.0.0",
+  "version": "1.0.7",
   "description": "Document scanner with border detection, perspective correction and custom crop/resize",
   "main": "index.js",
   "scripts": {
@@ -13,7 +13,7 @@
   "license": "MIT",
   "homepage": "https://github.com/ubidreams/react-native-document-scanner",
   "peerDependencies": {
-    "react-native": "0.59.1",
+    "react-native": "0.59.10",
     "react-native-camera": "3.0.1",
     "react-native-svg": "9.6.2"
   },

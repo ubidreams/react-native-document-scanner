@@ -329,7 +329,11 @@ class DocumentScanner extends Component {
           <View
             style={[
               styles.zoomContainer,
-              { opacity: zoomOnPoint !== null ? 1 : 0 },
+              zoomOnPoint === null ? { opacity: 0 } : {
+                top: zoomOnPoint.y - ZOOM_CONTAINER_SIZE - 50,
+                left: zoomOnPoint.x - ZOOM_CONTAINER_SIZE / 2,
+                opacity: 1,
+              }
             ]}
           >
             {/* Image */}
